@@ -125,7 +125,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 placeholder="Masukkan username"
-                className="w-full rounded-xl border border-gray-600 bg-gray-700/50 px-4 py-3.5 text-white placeholder-gray-400 outline-none transition-all duration-200 focus:border-[#ccdc34] focus:bg-gray-700 focus:ring-2 focus:ring-green-500/20"
+                className="w-full rounded-xl border border-gray-600 bg-gray-700/50 px-4 py-3.5 text-white placeholder-gray-400 outline-none transition-all duration-200 focus:border-[#cbdb34] focus:bg-gray-700 focus:ring-2 focus:ring-green-500/20"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -141,7 +141,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 placeholder="Masukkan password brand"
-                className="mb-4 w-full rounded-xl border border-gray-600 bg-gray-700/50 px-4 py-3 text-white placeholder-gray-400 outline-none transition-all duration-200 focus:border-[#ccdc34] focus:bg-gray-700 focus:ring-2 focus:ring-green-500/20"
+                className="mb-4 w-full rounded-xl border border-gray-600 bg-gray-700/50 px-4 py-3 text-white placeholder-gray-400 outline-none transition-all duration-200 focus:border-[#cbdb34] focus:bg-gray-700 focus:ring-2 focus:ring-green-500/20"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -168,9 +168,9 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-[#ccdc34] py-3.5 text-sm font-semibold text-black 
+              className="w-full rounded-xl bg-[#cbdb34] py-3.5 text-sm font-semibold text-black 
              transition-all duration-200 hover:bg-[#e2f243] active:scale-[0.98] 
-             disabled:cursor-not-allowed disabled:opacity-70 shadow-lg hover:shadow-[#ccdc34]/40"
+             disabled:cursor-not-allowed disabled:opacity-70 shadow-lg hover:shadow-[#cbdb34]/40"
             >
               {loading ? (
                 <div className="flex items-center justify-center">

@@ -2,18 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useUser } from "@/app/hooks/useUser";
 import ConfirmDialog from "./ConfirmDialog";
 
 type Props = {
-  /** drawer state untuk mobile */
   open?: boolean;
-  /** tutup drawer */
   onClose?: () => void;
-  /** toggle drawer (dipakai oleh tombol ☰ agar bisa buka/tutup) */
   onToggle?: () => void;
-  /** lebar sidebar di desktop (default w-72) */
   widthClass?: string;
 };
 
@@ -24,11 +20,11 @@ export default function Sidebar({
   widthClass = "w-72",
 }: Props) {
   const router = useRouter();
+  const path = usePathname();
   const user = useUser();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [openConfirm, setOpenConfirm] = useState(false);
 
-  // ESC = close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose?.();
@@ -49,54 +45,58 @@ export default function Sidebar({
   };
 
   const Item = ({
+    href,
     children,
-    active = false,
-    onClick,
+    active,
   }: {
+    href?: string;
     children: React.ReactNode;
     active?: boolean;
-    onClick?: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium
-        ${active ? "bg-green-600 text-white" : "text-gray-700 hover:bg-white/60"}`}
-    >
-      {children}
-    </button>
-  );
+  }) => {
+    const baseClasses =
+      "flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition-colors";
+    const activeClasses = active
+      ? "bg-green-600 text-white"
+      : "text-gray-700 hover:bg-white/60";
 
-  const closeAnd = (fn?: () => void) => () => {
-    fn?.();
-    onClose?.();
+    if (href) {
+      return (
+        <Link
+          href={href}
+          onClick={onClose}
+          className={`${baseClasses} ${activeClasses}`}
+        >
+          {children}
+        </Link>
+      );
+    }
+
+    return (
+      <div className={`${baseClasses} ${activeClasses}`}>{children}</div>
+    );
   };
 
   return (
     <>
-      {/* Backdrop (mobile) */}
+      {/* Backdrop mobile */}
       <div
-        className={`fixed inset-0 z-30 bg-black/40 transition-opacity lg:hidden
-          ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 bg-black/40 transition-opacity lg:hidden ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
         aria-hidden
       />
 
-      {/* Sidebar */}
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Sidebar"
-        className={`
-    fixed inset-y-0 left-0 z-40
-    ${widthClass}
-    transform transition-transform duration-300 ease-in-out
-    bg-white/95 backdrop-blur shadow-xl
-    ${open ? "translate-x-0" : "-translate-x-full"}
-    lg:translate-x-0
-  `}
+        className={`fixed inset-y-0 left-0 z-40 ${widthClass}
+          transform transition-transform duration-300 ease-in-out
+          bg-white/95 backdrop-blur shadow-xl
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          lg:translate-x-0`}
       >
-        {/* gunakan h-dvh agar pas di iOS */}
         <div className="h-dvh flex flex-col">
           {/* Header */}
           <div className="px-4 pt-4 pb-3 shrink-0 border-b border-gray-100 flex items-center">
@@ -114,40 +114,38 @@ export default function Sidebar({
             </button>
           </div>
 
-          {/* Menu (scroll) */}
-          <nav
-            className="
-              flex-1 overflow-y-auto p-4 space-y-1
-              pb-24            /* beri ruang bawah agar tidak ketabrak footer */
-              [-webkit-overflow-scrolling:touch]  /* iOS smooth scroll */
-            "
-          >
-            <Item active onClick={closeAnd(() => router.push("/dashboard"))}>
+          {/* Menu */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1 pb-24">
+            <Item href="/dashboard" active={path.startsWith("/dashboard")}>
               🏠 Beranda
             </Item>
-            <Item onClick={closeAnd()} >⭐ Rating</Item>
-            <Item onClick={closeAnd()} >📡 Live Report</Item>
+            <Item>⭐ Rating</Item>
+            <Item>📡 Live Report</Item>
 
             <div>
               <div className="px-4 py-2 text-xs font-semibold text-gray-500">
                 Laporan
               </div>
               <div className="ml-2 space-y-1">
-                <Item onClick={closeAnd()} >Ringkasan</Item>
-                <Item onClick={closeAnd()} >Per Outlet</Item>
+                <Item>Ringkasan</Item>
+                <Item>Per Outlet</Item>
               </div>
             </div>
 
-            <Item onClick={closeAnd()} >📍 Outlet</Item>
-            <Item onClick={closeAnd()} >🍗 Item</Item>
-            <Item onClick={closeAnd()} >🕒 Aktivitas</Item>
-            <Item onClick={closeAnd()} >
+            <Item>📍 Outlet</Item>
+            <Item href="/items" active={path.startsWith("/items")}>🍗 Item</Item>
+            <Item>🕒 Aktivitas</Item>
+
+            <Item href="/variants">
               🧬 Varian
               <span className="ml-auto rounded-full bg-red-500/10 text-red-600 text-[10px] px-2 py-0.5">
                 Baru
               </span>
             </Item>
-            <Item onClick={closeAnd()} >💬 Ulasan</Item>
+
+            <Item href="/reviews" active={path.startsWith("/reviews")}>
+              💬 Ulasan
+            </Item>
 
             {user?.role === "superadmin" && (
               <div className="mt-1">
@@ -157,12 +155,18 @@ export default function Sidebar({
                   className="w-full text-left flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white/60"
                 >
                   ⚙️ Pengaturan
-                  <span className="ml-auto text-xs">{settingsOpen ? "▴" : "▾"}</span>
+                  <span className="ml-auto text-xs">
+                    {settingsOpen ? "▴" : "▾"}
+                  </span>
                 </button>
 
                 {settingsOpen && (
                   <div className="ml-2 mt-1 space-y-1">
-                    <Link href="/settings/add-user" className="block" onClick={onClose}>
+                    <Link
+                      href="/settings/add-user"
+                      className="block"
+                      onClick={onClose}
+                    >
                       <div className="flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium cursor-pointer text-gray-700 hover:bg-white/60">
                         ➕ Tambahkan User
                       </div>
@@ -173,7 +177,7 @@ export default function Sidebar({
             )}
           </nav>
 
-          {/* Footer (logout) */}
+          {/* Footer */}
           <div className="border-t border-gray-100 p-4">
             <button
               onClick={() => setOpenConfirm(true)}
@@ -185,7 +189,6 @@ export default function Sidebar({
         </div>
       </aside>
 
-      {/* Dialog konfirmasi logout */}
       <ConfirmDialog
         open={openConfirm}
         title="Keluar dari Sentimetrics?"
