@@ -119,8 +119,8 @@ export default function Sidebar({
             <Item href="/dashboard" active={path.startsWith("/dashboard")}>
               🏠 Beranda
             </Item>
-            <Item>⭐ Rating</Item>
-            <Item>📡 Live Report</Item>
+            {/* <Item>⭐ Rating</Item> */}
+            {/* <Item>📡 Live Report</Item> */}
 
             {/* <div>
               <div className="px-4 py-2 text-xs font-semibold text-gray-500">
@@ -132,7 +132,7 @@ export default function Sidebar({
               </div>
             </div> */}
 
-            <Item>📍 Outlet</Item>
+            {/* <Item>📍 Outlet</Item> */}
             <Item href="/items" active={path.startsWith("/items")}>
               🍗 Item
             </Item>
