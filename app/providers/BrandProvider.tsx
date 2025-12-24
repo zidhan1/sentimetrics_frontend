@@ -23,7 +23,7 @@ type Ctx = {
   seedBrands: (brands: Brand[], activeId?: string) => void;
 };
 
-const BrandCtx = createContext<Ctx>(null as any);
+const BrandCtx = createContext<Ctx | null>(null);
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 

@@ -6,11 +6,26 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
+// Type definitions
+interface Brand {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface LoginResponse {
+  token: string;
+  user?: unknown;
+  brands?: Array<{ id: number | string; name: string; [key: string]: unknown }>;
+  message?: string;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { seedBrands } = useBrand();
+  const brandContext = useBrand();
+  const seedBrands = brandContext?.seedBrands;
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +34,8 @@ export default function LoginPage() {
 
   // Jika sudah punya token, langsung alihkan ke /dashboard
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (token) router.replace("/dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -38,7 +54,7 @@ export default function LoginPage() {
       });
 
       // Antisipasi response non-JSON
-      let data: any = {};
+      let data: LoginResponse | Record<string, unknown> = {};
       try {
         data = await res.json();
       } catch {
@@ -46,13 +62,47 @@ export default function LoginPage() {
       }
 
       if (!res.ok) {
-        setError(data?.message || "Login gagal");
+        const errorMessage =
+          typeof data === "object" && data !== null && "message" in data
+            ? String(data.message)
+            : "Login gagal";
+        setError(errorMessage);
         setLoading(false);
         return;
       }
 
       // Response backend diasumsikan: { token, user, brands, message }
-      const { token, user, brands } = data || {};
+      const token =
+        typeof data === "object" && data !== null && "token" in data
+          ? String(data.token)
+          : undefined;
+      const user =
+        typeof data === "object" && data !== null && "user" in data
+          ? data.user
+          : undefined;
+      const rawBrands =
+        typeof data === "object" &&
+        data !== null &&
+        "brands" in data &&
+        Array.isArray(data.brands)
+          ? (data.brands as Array<{
+              id: number | string;
+              name: string;
+              [key: string]: unknown;
+            }>)
+          : [];
+
+      // Convert brands to Brand type with string IDs
+      const brands: Brand[] = rawBrands.map((b) => ({
+        ...b,
+        id: String(b.id),
+      }));
+
+      if (!token) {
+        setError("Token tidak ditemukan dalam response");
+        setLoading(false);
+        return;
+      }
 
       // Simpan kredensial
       document.cookie = `token=${token}; path=/; max-age=3600; samesite=lax`;
@@ -61,25 +111,27 @@ export default function LoginPage() {
 
       // Seed BrandProvider agar Topbar langsung punya data brand
       // (aktifkan brand pertama sebagai default jika belum ada pilihan)
-      const firstBrandId = Array.isArray(brands) && brands.length ? brands[0].id : undefined;
-      seedBrands(Array.isArray(brands) ? brands : [], firstBrandId);
+      const firstBrandId = brands.length ? brands[0].id : undefined;
+      if (seedBrands) {
+        seedBrands(brands, firstBrandId);
+      }
 
       // (Opsional) Simpan activeBrand juga di localStorage (BrandProvider juga sudah melakukannya)
       if (firstBrandId) {
-        const active = brands.find((b: any) => b.id === firstBrandId);
+        const active = brands.find((b: Brand) => b.id === firstBrandId);
         if (active) localStorage.setItem("activeBrand", JSON.stringify(active));
       }
 
       // Alihkan ke dashboard
       router.replace("/dashboard");
-    } catch (err) {
+    } catch {
       setError("Tidak bisa terhubung ke server");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-br from-gray-900 to-black">
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 to-black">
       {/* Background pattern/overlay */}
       <div
         className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-black opacity-90"
@@ -92,14 +144,14 @@ export default function LoginPage() {
       />
 
       {/* Card form */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl bg-gray-800/80 backdrop-blur-xl p-8 md:p-10 shadow-2xl border border-gray-700">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
+        <div className="w-full max-w-md p-8 border border-gray-700 shadow-2xl rounded-2xl bg-gray-800/80 backdrop-blur-xl md:p-10">
           {/* Logo */}
           <div className="mb-16 text-center">
             <Image
               src="/logo-sentimetrics-transparant.png"
               alt="Sentimetrics Logo"
-              width={480}             // resolusi besar agar tajam
+              width={480} // resolusi besar agar tajam
               height={160}
               priority
               className="
@@ -116,10 +168,10 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="space-y-6">
             {/* Username Field */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-200">
+              <label className="block mb-2 text-sm font-medium text-gray-200">
                 Username
               </label>
-              {/* <p className="mb-3 text-xs text-amber-400/80 bg-amber-400/10 px-3 py-2 rounded-lg border border-amber-400/20">
+              {/* <p className="px-3 py-2 mb-3 text-xs border rounded-lg text-amber-400/80 bg-amber-400/10 border-amber-400/20">
                 *Jika anda Area Manager, gunakan nomor HP anda untuk login.
               </p> */}
               <input
@@ -150,9 +202,13 @@ export default function LoginPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 backdrop-blur-sm">
+              <div className="px-4 py-3 text-sm text-red-200 border rounded-xl border-red-400/30 bg-red-500/10 backdrop-blur-sm">
                 <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -175,11 +231,18 @@ export default function LoginPage() {
               {loading ? (
                 <div className="flex items-center justify-center">
                   <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-black"
+                    className="w-4 h-4 mr-2 -ml-1 text-black animate-spin"
                     fill="none"
                     viewBox="0 0 24 24"
                   >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
                     <path
                       className="opacity-75"
                       fill="currentColor"
@@ -196,7 +259,9 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <p className="text-xs text-gray-500">© 2025 Sentimetrics. All rights reserved.</p>
+            <p className="text-xs text-gray-500">
+              © 2025 Sentimetrics. All rights reserved.
+            </p>
           </div>
         </div>
       </div>

@@ -10,11 +10,16 @@ type Channel = {
   itemInactive: number;
 };
 
+interface SummaryData {
+  channels?: Channel[];
+  [key: string]: unknown;
+}
+
 export default function SummaryCards({
   data,
   loading,
 }: {
-  data: any;
+  data: SummaryData | undefined;
   loading: boolean;
 }) {
   const channels: Channel[] = data?.channels?.length

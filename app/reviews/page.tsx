@@ -5,8 +5,9 @@ import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import ReviewsTable from "@/components/reviews/ReviewsTable";
 import ReviewsFilters, { Filters } from "@/components/reviews/ReviewsFilters";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
+// Type definitions
 type ReviewRow = {
   id: number;
   outletId: number;
@@ -32,11 +33,27 @@ type SortKey =
 
 type OutletOpt = { id: number | string; name: string };
 
+interface Channel {
+  id: number | string;
+  code: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface ApiError {
+  message: string;
+  [key: string]: unknown;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export default function ReviewsPage() {
-  const { activeBrand, getAuthHeaders } = useBrand();
-  const [channel, setChannel] = useState<any[]>([]);
+  const brandContext = useBrand();
+  const { activeBrand, getAuthHeaders } = brandContext || {
+    activeBrand: null,
+    getAuthHeaders: () => ({}),
+  };
+  const [channel, setChannel] = useState<Channel[]>([]);
 
   const [filters, setFilters] = useState<Filters>({
     channelId: "all",
@@ -80,10 +97,12 @@ export default function ReviewsPage() {
         const json = await res.json();
         const data = Array.isArray(json) ? json : json.rows;
         if (!cancelled) {
-          const opts = (data || []).map((o: any) => ({
-            id: o.id,
-            name: o.name,
-          })) as OutletOpt[];
+          const opts = (data || []).map(
+            (o: { id: number | string; name: string }) => ({
+              id: o.id,
+              name: o.name,
+            })
+          ) as OutletOpt[];
           setOutlets(opts);
         }
       } catch {
@@ -125,8 +144,9 @@ export default function ReviewsPage() {
           const data = Array.isArray(json) ? json : json.rows;
           setRows(data || []);
         }
-      } catch (e: any) {
-        if (!cancelled) setErr(e?.message || "Gagal memuat ulasan");
+      } catch (e: unknown) {
+        const error = e as ApiError;
+        if (!cancelled) setErr(error?.message || "Gagal memuat ulasan");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -183,7 +203,7 @@ export default function ReviewsPage() {
         const chA = a.channel?.name || "";
         const chB = b.channel?.name || "";
 
-        const map: Record<SortKey, [any, any]> = {
+        const map: Record<SortKey, [string | number, string | number]> = {
           createdAt: [
             new Date(a.createdAt).getTime(),
             new Date(b.createdAt).getTime(),
@@ -225,8 +245,9 @@ export default function ReviewsPage() {
       if (!channels) return setErr("Failed or not found channels");
 
       setChannel(channels.data || []);
-    } catch (e: any) {
-      setErr(e?.message || "Gagal memuat channel");
+    } catch (e: unknown) {
+      const error = e as ApiError;
+      setErr(error?.message || "Gagal memuat channel");
     } finally {
       setLoading(false);
     }
@@ -234,6 +255,7 @@ export default function ReviewsPage() {
 
   useEffect(() => {
     fetchChannel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

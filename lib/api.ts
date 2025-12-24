@@ -2,9 +2,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export const getToken = () =>
-  typeof window !== "undefined"
-    ? (localStorage.getItem("token") ?? "")
-    : "";
+  typeof window !== "undefined" ? localStorage.getItem("token") ?? "" : "";
 
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -15,7 +13,10 @@ export async function apiGet<T>(path: string): Promise<T> {
   return res.json();
 }
 
-export async function apiPost<T>(path: string, body: any): Promise<T> {
+export async function apiPost<T, B = Record<string, unknown>>(
+  path: string,
+  body: B
+): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {

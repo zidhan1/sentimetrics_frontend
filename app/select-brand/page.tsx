@@ -7,6 +7,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 type Brand = { id: string; name: string };
 
+interface ApiError {
+  message: string;
+  [key: string]: unknown;
+}
+
 export default function SelectBrandPage() {
   const router = useRouter();
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -38,8 +43,9 @@ export default function SelectBrandPage() {
         });
         if (!r.ok) throw new Error("Gagal memuat brands");
         setBrands(await r.json());
-      } catch (e: any) {
-        setErr(e.message || "Error");
+      } catch (e: unknown) {
+        const error = e as ApiError;
+        setErr(error?.message || "Error");
       } finally {
         setLoading(false);
       }
@@ -63,41 +69,42 @@ export default function SelectBrandPage() {
 
       // gunakan PUSH supaya tombol back dari dashboard kembali ke /select-brand
       router.push("/dashboard");
-    } catch (e: any) {
-      setErr(e.message || "Error");
+    } catch (e: unknown) {
+      const error = e as ApiError;
+      setErr(error?.message || "Error");
       setSubmitting(null);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen relative">
+      <div className="relative min-h-screen">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-center bg-cover"
           style={{ backgroundImage: "url('/login-bg.jpg')" }}
         />
         <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 flex min-h-screen items-center justify-center">
-          <div className="text-white/90 text-lg">Loading…</div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-lg text-white/90">Loading…</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       {/* Background & overlay -> sama dengan login */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 bg-center bg-cover"
         style={{ backgroundImage: "url('/login-bg.jpg')" }}
         aria-hidden
       />
       <div className="absolute inset-0 bg-black/50" aria-hidden />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl bg-white/95 p-8 shadow-2xl">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
+        <div className="w-full max-w-md p-8 shadow-2xl rounded-2xl bg-white/95">
           <h1 className="text-2xl font-bold text-center">Pilih Brand</h1>
-          <p className="mt-1 mb-6 text-center text-sm text-gray-600">
+          <p className="mt-1 mb-6 text-sm text-center text-gray-600">
             {active ? (
               <>
                 Brand aktif saat ini: <b>{active.name}</b>
@@ -108,7 +115,7 @@ export default function SelectBrandPage() {
           </p>
 
           {err && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="px-3 py-2 mb-4 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50">
               {err}
             </div>
           )}
@@ -132,7 +139,7 @@ export default function SelectBrandPage() {
 
           <button
             onClick={() => router.replace("/auth/login")}
-            className="mt-6 w-full text-sm text-gray-500 hover:text-gray-700"
+            className="w-full mt-6 text-sm text-gray-500 hover:text-gray-700"
           >
             Ganti Akun
           </button>

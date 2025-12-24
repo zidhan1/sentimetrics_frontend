@@ -8,6 +8,11 @@ import SuperadminGate from "@/components/SuperadminGate";
 type Company = { id: string; name: string };
 type Brand = { id: string; name: string };
 
+interface ApiError {
+  message: string;
+  [key: string]: unknown;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export default function AddUserPage() {
@@ -57,8 +62,9 @@ export default function AddUserPage() {
       try {
         setLoading(true);
         await loadCompanies();
-      } catch (e: any) {
-        setErr(e.message || "Error");
+      } catch (e: unknown) {
+        const error = e as ApiError;
+        setErr(error?.message || "Error");
       } finally {
         setLoading(false);
       }
@@ -91,8 +97,9 @@ export default function AddUserPage() {
       await loadCompanies();
       setCompanyId(j.company.id);
       await loadBrands(j.company.id);
-    } catch (e: any) {
-      setErr(e.message || "Error");
+    } catch (e: unknown) {
+      const error = e as ApiError;
+      setErr(error?.message || "Error");
     }
   };
 
@@ -114,8 +121,9 @@ export default function AddUserPage() {
       setNewBrandName("");
       setOpenBrandModal(false);
       await loadBrands(companyId);
-    } catch (e: any) {
-      setErr(e.message || "Error");
+    } catch (e: unknown) {
+      const error = e as ApiError;
+      setErr(error?.message || "Error");
     }
   };
 
@@ -146,8 +154,9 @@ export default function AddUserPage() {
       setPassword("");
       setRole("user");
       // keep company selection as-is
-    } catch (e: any) {
-      setErr(e.message || "Error");
+    } catch (e: unknown) {
+      const error = e as ApiError;
+      setErr(error?.message || "Error");
     } finally {
       setSubmitting(false);
     }
@@ -164,32 +173,32 @@ export default function AddUserPage() {
           <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
 
           <main className="p-6">
-            <div className="rounded-2xl bg-white/95 p-6 shadow-md max-w-3xl">
-              <h1 className="text-2xl font-bold mb-4">Tambahkan User</h1>
+            <div className="max-w-3xl p-6 shadow-md rounded-2xl bg-white/95">
+              <h1 className="mb-4 text-2xl font-bold">Tambahkan User</h1>
 
               {loading ? (
                 <div className="text-sm text-gray-600">Memuat data…</div>
               ) : (
                 <form onSubmit={onSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label className="block mb-1 text-sm font-medium">
                         Username
                       </label>
                       <input
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-600"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label className="block mb-1 text-sm font-medium">
                         Password
                       </label>
                       <input
                         type="password"
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-600"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -197,13 +206,13 @@ export default function AddUserPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label className="block mb-1 text-sm font-medium">
                         Role
                       </label>
                       <select
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-600"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                       >
@@ -215,14 +224,14 @@ export default function AddUserPage() {
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="block text-sm font-medium mb-1">
+                        <label className="block mb-1 text-sm font-medium">
                           Company
                         </label>
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={() => setOpenCompanyModal(true)}
-                            className="text-xs rounded-md border px-2 py-1 hover:bg-green-50"
+                            className="px-2 py-1 text-xs border rounded-md hover:bg-green-50"
                           >
                             + Tambah Company
                           </button>
@@ -230,14 +239,14 @@ export default function AddUserPage() {
                             type="button"
                             disabled={!companyId}
                             onClick={() => setOpenBrandModal(true)}
-                            className="text-xs rounded-md border px-2 py-1 hover:bg-green-50 disabled:opacity-40"
+                            className="px-2 py-1 text-xs border rounded-md hover:bg-green-50 disabled:opacity-40"
                           >
                             + Tambah Brand
                           </button>
                         </div>
                       </div>
                       <select
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-600"
                         value={companyId}
                         onChange={(e) => setCompanyId(e.target.value)}
                       >
@@ -253,15 +262,15 @@ export default function AddUserPage() {
 
                   {companyId && (
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label className="block mb-1 text-sm font-medium">
                         Brand pada Company ini
                       </label>
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                      <div className="p-3 text-sm border border-gray-200 rounded-lg bg-gray-50">
                         {brands.length === 0
                           ? "Belum ada brand."
                           : brands.map((b) => b.name).join(", ")}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="mt-1 text-xs text-gray-500">
                         *Saat ini backend menautkan user ke <b>company</b>.
                         Akses brand mengikuti company tersebut.
                       </p>
@@ -269,12 +278,12 @@ export default function AddUserPage() {
                   )}
 
                   {err && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <div className="px-3 py-2 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50">
                       {err}
                     </div>
                   )}
                   {msg && (
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    <div className="px-3 py-2 text-sm border rounded-lg border-emerald-200 bg-emerald-50 text-emerald-800">
                       {msg}
                     </div>
                   )}
@@ -283,7 +292,7 @@ export default function AddUserPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
+                      className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-60"
                     >
                       {submitting ? "Menyimpan..." : "Simpan User"}
                     </button>
@@ -297,20 +306,20 @@ export default function AddUserPage() {
 
       {/* Modal Tambah Company */}
       {openCompanyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <form
             onSubmit={createCompany}
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            className="w-full max-w-md p-6 bg-white shadow-2xl rounded-2xl"
           >
-            <h3 className="text-lg font-semibold mb-3">Tambah Company</h3>
+            <h3 className="mb-3 text-lg font-semibold">Tambah Company</h3>
             <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-600"
               placeholder="Nama company"
               value={newCompanyName}
               onChange={(e) => setNewCompanyName(e.target.value)}
               required
             />
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 type="button"
                 onClick={() => setOpenCompanyModal(false)}
@@ -331,23 +340,23 @@ export default function AddUserPage() {
 
       {/* Modal Tambah Brand */}
       {openBrandModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <form
             onSubmit={createBrand}
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            className="w-full max-w-md p-6 bg-white shadow-2xl rounded-2xl"
           >
-            <h3 className="text-lg font-semibold mb-1">Tambah Brand</h3>
-            <p className="text-xs text-gray-500 mb-3">
+            <h3 className="mb-1 text-lg font-semibold">Tambah Brand</h3>
+            <p className="mb-3 text-xs text-gray-500">
               Company: {companies.find((c) => c.id === companyId)?.name}
             </p>
             <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-600"
               placeholder="Nama brand"
               value={newBrandName}
               onChange={(e) => setNewBrandName(e.target.value)}
               required
             />
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 type="button"
                 onClick={() => setOpenBrandModal(false)}
