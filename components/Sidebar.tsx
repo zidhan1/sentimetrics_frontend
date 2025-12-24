@@ -54,7 +54,7 @@ export default function Sidebar({
     active?: boolean;
   }) => {
     const baseClasses =
-      "flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:bg-green-500 hover:text-white";
+      "flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:text-white hover:bg-green-500";
     const activeClasses = active
       ? "bg-green-600 text-white"
       : "text-gray-700 hover:bg-white/60";
@@ -122,7 +122,7 @@ export default function Sidebar({
             <Item>⭐ Rating</Item>
             <Item>📡 Live Report</Item>
 
-            <div>
+            {/* <div>
               <div className="px-4 py-2 text-xs font-semibold text-gray-500">
                 Laporan
               </div>
@@ -130,7 +130,7 @@ export default function Sidebar({
                 <Item>Ringkasan</Item>
                 <Item>Per Outlet</Item>
               </div>
-            </div>
+            </div> */}
 
             <Item>📍 Outlet</Item>
             <Item href="/items" active={path.startsWith("/items")}>
