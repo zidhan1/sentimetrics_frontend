@@ -9,7 +9,13 @@ type Props = {
 };
 
 export default function Topbar({ onOpenSidebar }: Props) {
-  const { brands, activeBrand, selectBrand, loading } = useBrand();
+  const brandContext = useBrand();
+  const {
+    brands = [],
+    activeBrand = null,
+    selectBrand = () => {},
+    loading = false,
+  } = brandContext || {};
   const user = useUser(); // ✅ ambil data user login
   const [open, setOpen] = useState(false);
   const popRef = useRef<HTMLDivElement | null>(null);
@@ -38,13 +44,13 @@ export default function Topbar({ onOpenSidebar }: Props) {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur shadow-md">
-      <div className="px-4 py-3 flex items-center gap-2 lg:px-6">
+    <header className="sticky top-0 z-50 shadow-md bg-white/95 backdrop-blur">
+      <div className="flex items-center gap-2 px-4 py-3 lg:px-6">
         {/* ☰ Hamburger */}
         <button
           type="button"
           aria-label="Buka menu"
-          className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 hover:bg-green-50"
+          className="inline-flex items-center justify-center border border-gray-200 rounded-md lg:hidden h-9 w-9 hover:bg-green-50"
           onClick={() => onOpenSidebar?.()}
         >
           ☰
@@ -53,13 +59,13 @@ export default function Topbar({ onOpenSidebar }: Props) {
         {/* 👤 Greeting yang menampilkan username */}
         <div className="text-sm text-gray-600 truncate max-w-[45vw] sm:max-w-none">
           Selamat datang di <b>Sentimetrics</b>,{" "}
-          <span className="text-green-600 font-semibold">
+          <span className="font-semibold text-green-600">
             {user?.username || "Pengguna"}
           </span>
         </div>
 
         {/* Dropdown Brand */}
-        <div className="ml-auto relative">
+        <div className="relative ml-auto">
           <button
             ref={btnRef}
             onClick={() => setOpen((v) => !v)}
@@ -82,7 +88,7 @@ export default function Topbar({ onOpenSidebar }: Props) {
           {open && (
             <div
               ref={popRef}
-              className="md:absolute md:right-0 md:top-auto md:mt-2 md:w-64 fixed left-2 right-2 top-[64px] md:static rounded-xl border border-gray-200 bg-white shadow-xl z-[60] overflow-hidden"
+              className="fixed left-2 right-2 top-[64px] md:absolute md:right-0 md:top-auto md:mt-2 md:w-64 rounded-xl border border-gray-200 bg-white shadow-xl z-[60] overflow-hidden"
               role="listbox"
               tabIndex={-1}
             >
@@ -97,7 +103,9 @@ export default function Topbar({ onOpenSidebar }: Props) {
                       await selectBrand(b.id);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-green-50 ${
-                      activeBrand?.id === b.id ? "bg-green-50 font-semibold" : ""
+                      activeBrand?.id === b.id
+                        ? "bg-green-50 font-semibold"
+                        : ""
                     }`}
                   >
                     {b.name}
