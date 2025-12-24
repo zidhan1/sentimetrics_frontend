@@ -36,10 +36,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export default function ReviewsPage() {
   const { activeBrand, getAuthHeaders } = useBrand();
+  const [channel, setChannel] = useState<any[]>([]);
 
   const [filters, setFilters] = useState<Filters>({
     channelId: "all",
-    outletId: "all",   // 👈 NEW
+    outletId: "all", // 👈 NEW
     rating: "all",
     q: "",
     dateFrom: "",
@@ -79,8 +80,10 @@ export default function ReviewsPage() {
         const json = await res.json();
         const data = Array.isArray(json) ? json : json.rows;
         if (!cancelled) {
-          const opts =
-            (data || []).map((o: any) => ({ id: o.id, name: o.name })) as OutletOpt[];
+          const opts = (data || []).map((o: any) => ({
+            id: o.id,
+            name: o.name,
+          })) as OutletOpt[];
           setOutlets(opts);
         }
       } catch {
@@ -136,7 +139,7 @@ export default function ReviewsPage() {
   }, [
     activeBrand,
     filters.channelId,
-    filters.outletId,     // 👈 NEW
+    filters.outletId, // 👈 NEW
     filters.rating,
     filters.q,
     filters.dateFrom,
@@ -181,7 +184,10 @@ export default function ReviewsPage() {
         const chB = b.channel?.name || "";
 
         const map: Record<SortKey, [any, any]> = {
-          createdAt: [new Date(a.createdAt).getTime(), new Date(b.createdAt).getTime()],
+          createdAt: [
+            new Date(a.createdAt).getTime(),
+            new Date(b.createdAt).getTime(),
+          ],
           outletName: [outletA, outletB],
           channelName: [chA, chB],
           rating: [a.rating, b.rating],
@@ -191,41 +197,69 @@ export default function ReviewsPage() {
         };
 
         const [va, vb] = map[sort.key];
-        if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+        if (typeof va === "number" && typeof vb === "number")
+          return (va - vb) * dir;
         return String(va).localeCompare(String(vb)) * dir;
       });
     }
 
     return arr;
-  }, [rows, filters.outletId, filters.q, filters.dateFrom, filters.dateTo, sort]);
+  }, [
+    rows,
+    filters.outletId,
+    filters.q,
+    filters.dateFrom,
+    filters.dateTo,
+    sort,
+  ]);
+
+  async function fetchChannel() {
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_BASE}/channels`, {
+        headers: getAuthHeaders(),
+      });
+      const channels = await res.json();
+
+      if (!channels) return setErr("Failed or not found channels");
+
+      setChannel(channels.data || []);
+    } catch (e: any) {
+      setErr(e?.message || "Gagal memuat channel");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchChannel();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
+      <div className="flex flex-col flex-1 min-w-0 lg:pl-72">
         <Topbar />
 
         <main className="p-8 space-y-6">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-semibold ml-2 text-gray-800">💬 Ulasan</h1>
+            <h1 className="ml-2 text-2xl font-semibold text-gray-800">
+              💬 Ulasan
+            </h1>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="p-4 bg-white shadow-sm rounded-xl">
             <ReviewsFilters
               value={filters}
               onChange={setFilters}
-              channels={[
-                { id: "all", name: "Semua Channel" },
-                { id: 1, name: "GoFood" },
-                { id: 2, name: "GrabFood" },
-                { id: 3, name: "ShopeeFood" },
-              ]}
+              channels={channel}
               outlets={outlets} // 👈 NEW
             />
           </div>
 
           {err && (
-            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-red-700">
+            <div className="px-4 py-3 text-red-700 border border-red-200 rounded-xl bg-red-50">
               {err}
             </div>
           )}

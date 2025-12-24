@@ -67,18 +67,18 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!token) return; // tidak ada token => abaikan
     setLoading(true);
+
     try {
       const res = await fetch(`${API_BASE}/brands`, {
         headers: getAuthHeaders(),
         cache: "no-store",
       });
+
       if (!res.ok) throw new Error(`Failed to fetch brands (${res.status})`);
       const b: Brand[] = await res.json();
       setBrands(b || []);
       localStorage.setItem("brands", JSON.stringify(b || []));
-      // kalau belum ada activeBrand, pilih default nanti di efek #3
     } catch (e) {
-      // boleh tampilkan log di console dev
       console.warn("refresh brands error:", e);
     } finally {
       setLoading(false);
@@ -89,10 +89,16 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   // - sudah punya token
   // - brands masih kosong (belum ada dari hydration)
   useEffect(() => {
-    if (token && brands.length === 0) {
+    if (!token) return;
+
+    refresh();
+
+    const interval = setInterval(() => {
       refresh();
-    }
-  }, [token, brands.length, refresh]);
+    }, 3600000); // Setiap 1 jam refresh untuk melihat brands
+
+    return () => clearInterval(interval);
+  }, [token, refresh]);
 
   /** ----------------------
    * 3) Pastikan ada activeBrand jika brands sudah ada
@@ -110,9 +116,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
    * ---------------------- */
   const selectBrand = useCallback(
     async (id: string) => {
-      const next =
-        (brands || []).find((b) => b.id === id) ||
-        null;
+      const next = (brands || []).find((b) => b.id === id) || null;
 
       setActiveBrand(next);
       if (next) {
@@ -140,23 +144,26 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   /** ----------------------
    * 5) seedBrands (opsional): kompatibel dengan login lama
    * ---------------------- */
-  const seedBrands = useCallback((b: Brand[], activeId?: string) => {
-    setBrands(b || []);
-    localStorage.setItem("brands", JSON.stringify(b || []));
-    let act: Brand | null = null;
-    if (activeId) {
-      act = (b || []).find((x) => x.id === activeId) || null;
-    }
-    // jika tidak diberi activeId, biarkan efek #3 yang memilihkan default
-    if (act) {
-      setActiveBrand(act);
-      localStorage.setItem("activeBrand", JSON.stringify(act));
-    } else if (!activeBrand && (b || []).length > 0) {
-      const first = b[0];
-      setActiveBrand(first);
-      localStorage.setItem("activeBrand", JSON.stringify(first));
-    }
-  }, [activeBrand]);
+  const seedBrands = useCallback(
+    (b: Brand[], activeId?: string) => {
+      setBrands(b || []);
+      localStorage.setItem("brands", JSON.stringify(b || []));
+      let act: Brand | null = null;
+      if (activeId) {
+        act = (b || []).find((x) => x.id === activeId) || null;
+      }
+      // jika tidak diberi activeId, biarkan efek #3 yang memilihkan default
+      if (act) {
+        setActiveBrand(act);
+        localStorage.setItem("activeBrand", JSON.stringify(act));
+      } else if (!activeBrand && (b || []).length > 0) {
+        const first = b[0];
+        setActiveBrand(first);
+        localStorage.setItem("activeBrand", JSON.stringify(first));
+      }
+    },
+    [activeBrand]
+  );
 
   const value = useMemo<Ctx>(
     () => ({
@@ -168,7 +175,15 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       refresh,
       seedBrands,
     }),
-    [brands, activeBrand, loading, selectBrand, getAuthHeaders, refresh, seedBrands]
+    [
+      brands,
+      activeBrand,
+      loading,
+      selectBrand,
+      getAuthHeaders,
+      refresh,
+      seedBrands,
+    ]
   );
 
   return <BrandCtx.Provider value={value}>{children}</BrandCtx.Provider>;

@@ -2,11 +2,11 @@
 
 export type Filters = {
   channelId: number | "all" | string;
-  outletId: number | "all" | string;   // 👈 NEW
+  outletId: number | "all" | string; // 👈 NEW
   rating: number | "all" | string;
   q: string;
   dateFrom: string; // YYYY-MM-DD
-  dateTo: string;   // YYYY-MM-DD
+  dateTo: string; // YYYY-MM-DD
 };
 
 type Option = { id: number | "all" | string; name: string };
@@ -24,7 +24,12 @@ function ymd(d: Date) {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-export default function ReviewsFilters({ value, onChange, channels, outlets = [] }: Props) {
+export default function ReviewsFilters({
+  value,
+  onChange,
+  channels,
+  outlets = [],
+}: Props) {
   const set = (patch: Partial<Filters>) => onChange({ ...value, ...patch });
 
   const setLastDays = (n: number) => {
@@ -46,7 +51,7 @@ export default function ReviewsFilters({ value, onChange, channels, outlets = []
             value={value.q}
             onChange={(e) => set({ q: e.target.value })}
             placeholder="Cari pesan, produk dipesan, atau nama pelanggan…"
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30"
+            className="w-full px-3 py-2 mt-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30"
           />
         </div>
 
@@ -54,11 +59,11 @@ export default function ReviewsFilters({ value, onChange, channels, outlets = []
         <div>
           <label className="text-xs text-gray-600">Channel</label>
           <select
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="w-full px-3 py-2 mt-1 text-sm border border-gray-200 rounded-lg"
             value={value.channelId}
             onChange={(e) => set({ channelId: e.target.value })}
           >
-            {channels.map((c) => (
+            {channels?.map((c) => (
               <option key={String(c.id)} value={c.id}>
                 {c.name}
               </option>
@@ -70,11 +75,13 @@ export default function ReviewsFilters({ value, onChange, channels, outlets = []
         <div>
           <label className="text-xs text-gray-600">Outlet</label>
           <select
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="w-full px-3 py-2 mt-1 text-sm border border-gray-200 rounded-lg"
             value={value.outletId}
             onChange={(e) => set({ outletId: e.target.value })}
           >
-            {([{ id: "all", name: "Semua Outlet" }, ...outlets] as Option[]).map((o) => (
+            {(
+              [{ id: "all", name: "Semua Outlet" }, ...outlets] as Option[]
+            ).map((o) => (
               <option key={String(o.id)} value={o.id}>
                 {o.name}
               </option>
@@ -86,7 +93,7 @@ export default function ReviewsFilters({ value, onChange, channels, outlets = []
         <div>
           <label className="text-xs text-gray-600">Rating</label>
           <select
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="w-full px-3 py-2 mt-1 text-sm border border-gray-200 rounded-lg"
             value={value.rating}
             onChange={(e) => set({ rating: e.target.value })}
           >
@@ -106,7 +113,7 @@ export default function ReviewsFilters({ value, onChange, channels, outlets = []
             type="date"
             value={value.dateFrom}
             onChange={(e) => set({ dateFrom: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="w-full px-3 py-2 mt-1 text-sm border border-gray-200 rounded-lg"
           />
         </div>
 
@@ -117,7 +124,7 @@ export default function ReviewsFilters({ value, onChange, channels, outlets = []
             type="date"
             value={value.dateTo}
             onChange={(e) => set({ dateTo: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="w-full px-3 py-2 mt-1 text-sm border border-gray-200 rounded-lg"
           />
         </div>
       </div>

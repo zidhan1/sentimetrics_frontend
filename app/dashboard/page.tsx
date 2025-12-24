@@ -6,12 +6,14 @@ import Topbar from "@/components/Topbar";
 import RatingChart from "@/components/RatingChart";
 import OutletPieChart from "@/components/OutletPieChart";
 import SummaryCards from "@/components/SummaryCards";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import axios from "axios";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export default function Dashboard() {
   const { activeBrand, getAuthHeaders } = useBrand();
+  const [summary, setSummary] = useState<JSON>();
 
   // ✅ kontrol drawer sidebar (mobile)
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -19,6 +21,43 @@ export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  const apiClient = useMemo(() => {
+    // pakai token dari getAuthHeaders biar konsisten
+    return axios.create({
+      baseURL: API_BASE, // pastikan ini "http://localhost:5000" misalnya
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(), // biasanya mengandung Authorization: Bearer ...
+      },
+    });
+  }, [getAuthHeaders]);
+
+  async function getSummaryOutlets() {
+    try {
+      setLoading(true);
+
+      // pastikan route-nya bener:
+      const res = await apiClient.get("/dashboard");
+      // kalau yang ada /dashboard/summary, ganti ke itu
+
+      setSummary(res.data);
+    } catch (err: any) {
+      // ini penting biar kamu tau penyebab real-nya
+      console.error(
+        "getSummaryOutlets failed:",
+        err?.response?.status,
+        err?.response?.data,
+        err?.message
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    getSummaryOutlets();
+  }, [apiClient]);
 
   useEffect(() => {
     if (!activeBrand?.id) return;
@@ -33,12 +72,13 @@ export default function Dashboard() {
           `http://localhost:5000/dashboard/summary?brandId=${activeBrand.id}`,
           {
             headers: getAuthHeaders(),
-            signal: ac.signal,     // ← penting
+            signal: ac.signal, // ← penting
             cache: "no-store",
           }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
+
         if (!cancelled) setData(json);
       } catch (err: any) {
         // abaikan abort
@@ -52,10 +92,9 @@ export default function Dashboard() {
 
     return () => {
       cancelled = true;
-      ac.abort();  // aman, error diabaikan
+      ac.abort(); // aman, error diabaikan
     };
   }, [activeBrand?.id, getAuthHeaders]);
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,7 +102,7 @@ export default function Dashboard() {
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onToggle={() => setSidebarOpen((v) => !v)}   // ⬅️ toggle
+        onToggle={() => setSidebarOpen((v) => !v)} // ⬅️ toggle
       />
       {/* ✅ Sisakan ruang sidebar saat desktop */}
       <div className="lg:pl-72">
@@ -71,20 +110,23 @@ export default function Dashboard() {
         <Topbar onOpenSidebar={() => setSidebarOpen((v) => !v)} />
 
         <main className="p-6 space-y-8">
-          <SummaryCards data={data} loading={loading} />
+          <SummaryCards data={summary} loading={loading} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <RatingChart data={data?.ratingHistory ?? []} loading={loading} />
             </div>
             <div>
-              <OutletPieChart data={data?.outletStatus ?? []} loading={loading} />
+              <OutletPieChart
+                data={data?.outletStatus ?? []}
+                loading={loading}
+              />
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white/95 p-6 shadow-md">
-            <h2 className="text-lg font-semibold mb-4">Daftar Outlet</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-6 shadow-md rounded-2xl bg-white/95">
+            <h2 className="mb-4 text-lg font-semibold">Daftar Outlet</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <h3 className="font-semibold text-green-600">Outlet Buka</h3>
                 <ul className="mt-2 text-sm list-disc list-inside">
